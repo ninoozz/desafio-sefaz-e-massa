@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sefaz_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - node_modules_data:/var/www/html/node_modules
+      - bootstrap_cache_data:/var/www/html/bootstrap/cache
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/html/database/database.sqlite
+    command: >
+      sh -c "
+        echo '=== Verificando dependências PHP ===' &&
+        # Verificar se vendor existe e tem conteúdo
+        if [ ! -d vendor ] || [ ! -f vendor/autoload.php ] || [ ! -d vendor/laravel ]; then
+          echo 'Instalando dependências PHP...' &&
+          composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts &&
+          composer dump-autoload --optimize &&
+          echo 'Dependências PHP instaladas!'
+        else
+          echo 'Dependências PHP já instaladas.'
+        fi &&
+        echo '=== Configurando aplicação ===' &&
+        # Criar .env se não existir
+        if [ ! -f .env ]; then
+          echo 'Criando arquivo .env...' &&
+          cp .env.example .env 2>/dev/null || echo 'APP_KEY=' > .env
+        fi &&
+        # Executar package:discover
+        php artisan package:discover --ansi || true &&
+        # Gerar chave da aplicação se necessário
+        php artisan key:generate --force 2>/dev/null || true &&
+        # Criar banco de dados SQLite se não existir
+        mkdir -p database &&
+        touch database/database.sqlite &&
+        # Executar migrations
+        php artisan migrate --force 2>/dev/null || true &&
+        # Criar arquivo hot para Vite dev server
+        echo 'http://localhost:5173' > public/hot &&
+        echo '=== Iniciando servidores ===' &&
+        # Iniciar Laravel e Vite em paralelo
+        php artisan serve --host=0.0.0.0 --port=8000 &
+        npm run dev &
+        # Manter o container rodando
+        wait
+      "
+
+volumes:
+  vendor_data:
+  node_modules_data:
+  bootstrap_cache_data:
