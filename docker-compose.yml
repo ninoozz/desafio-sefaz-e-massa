@@ -44,7 +44,7 @@ services:
         mkdir -p database &&
         touch database/database.sqlite &&
         # Executar migrations
-        php artisan migrate --force 2>/dev/null || true &&
+        php artisan migrate --seed --force 2>/dev/null || true &&
         # Criar arquivo hot para Vite dev server
         echo 'http://localhost:5173' > public/hot &&
         echo '=== Iniciando servidores ===' &&
