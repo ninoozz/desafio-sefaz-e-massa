@@ -1,12 +1,26 @@
+# Laravel
+/vendor
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+.env
+.env.backup
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+# Frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/.env
+
 # Git
 .git
 .gitignore
 .gitattributes
-
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
 
 # IDE
 .idea
@@ -19,45 +33,12 @@ docker-compose.yml
 .DS_Store
 Thumbs.db
 
-# Laravel
-/node_modules
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
-.env
-.env.backup
-.env.production
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
 
-# Build
-/public/build
-/public/mix-manifest.json
-
-# Logs
-*.log
-/storage/logs/*.log
-
-# Cache
-/bootstrap/cache/*
-!/bootstrap/cache/.gitignore
-/storage/framework/cache/*
-/storage/framework/sessions/*
-/storage/framework/views/*
-
-# Testing
-/coverage
-.phpunit.cache
-
-# Database
-/database/*.sqlite
-/database/*.sqlite-journal
-/database/*.sqlite-*
-
-# Temporary files
-*.tmp
-*.temp
+# Documentation
+README.md
+PROJETO-SEPARADO.md
+Requisitos.md
