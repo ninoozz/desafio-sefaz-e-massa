@@ -2,95 +2,45 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Profile\DeleteAccountAction;
+use App\Actions\Profile\UpdatePasswordAction;
+use App\Actions\Profile\UpdateProfileAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Profile\DeleteAccountRequest;
+use App\Http\Requests\Api\Profile\UpdatePasswordRequest;
+use App\Http\Requests\Api\Profile\UpdateProfileRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
 
 class ProfileController extends Controller
 {
-    /**
-     * Obter perfil do usuário
-     */
-    public function show(Request $request)
+    public function show(Request $request): JsonResponse
     {
         return response()->json($request->user());
     }
 
-    /**
-     * Atualizar perfil do usuário
-     */
-    public function update(Request $request)
+    public function update(UpdateProfileRequest $request, UpdateProfileAction $action): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $request->user()->id],
-        ], [
-            'name.required' => 'O nome é obrigatório.',
-            'email.required' => 'O e-mail é obrigatório.',
-            'email.email' => 'Digite um e-mail válido.',
-            'email.unique' => 'Este e-mail já está sendo usado.',
-        ]);
-
-        $user = $request->user();
-        $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
+        $user = $action->execute(
+            $request->user(),
+            $request->validated('name'),
+            $request->validated('email'),
+        );
 
         return response()->json($user);
     }
 
-    /**
-     * Atualizar senha do usuário
-     */
-    public function updatePassword(Request $request)
+    public function updatePassword(UpdatePasswordRequest $request, UpdatePasswordAction $action): JsonResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ], [
-            'current_password.required' => 'A senha atual é obrigatória.',
-            'current_password.current_password' => 'A senha atual está incorreta.',
-            'password.required' => 'A nova senha é obrigatória.',
-            'password.confirmed' => 'As senhas não coincidem.',
-        ]);
+        $action->execute($request->user(), $request->validated('password'));
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return response()->json([
-            'message' => 'Senha atualizada com sucesso.'
-        ]);
+        return response()->json(['message' => 'Senha atualizada com sucesso.']);
     }
 
-    /**
-     * Deletar conta do usuário
-     */
-    public function destroy(Request $request)
+    public function destroy(DeleteAccountRequest $request, DeleteAccountAction $action): JsonResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ], [
-            'password.required' => 'Digite sua senha para confirmar.',
-            'password.current_password' => 'A senha informada está incorreta.',
-        ]);
+        $action->execute($request->user());
 
-        $user = $request->user();
-        
-        // Deletar todos os tokens do usuário
-        $user->tokens()->delete();
-        
-        // Deletar usuário
-        $user->delete();
-
-        return response()->json([
-            'message' => 'Conta removida com sucesso.'
-        ]);
+        return response()->json(['message' => 'Conta removida com sucesso.']);
     }
 }
-

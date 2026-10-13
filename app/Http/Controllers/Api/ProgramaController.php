@@ -2,103 +2,47 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Programa\CreateProgramaAction;
+use App\Actions\Programa\DeleteProgramaAction;
+use App\Actions\Programa\ListProgramasAction;
+use App\Actions\Programa\ShowProgramaAction;
+use App\Actions\Programa\UpdateProgramaAction;
 use App\Http\Controllers\Controller;
-use App\Models\Programa;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\Programa\DeleteProgramaRequest;
+use App\Http\Requests\Api\Programa\StoreProgramaRequest;
+use App\Http\Requests\Api\Programa\UpdateProgramaRequest;
+use Illuminate\Http\JsonResponse;
 
+/**
+ * Recebe a requisição já validada e autorizada (Request),
+ * delega o caso de uso (Action) e devolve a resposta HTTP.
+ */
 class ProgramaController extends Controller
 {
-    /**
-     * Listar todos os programas
-     */
-    public function index()
+    public function index(ListProgramasAction $action): JsonResponse
     {
-        $programas = Programa::all();
-        return response()->json($programas);
+        return response()->json($action->execute());
     }
 
-    /**
-     * Mostrar um programa específico
-     */
-    public function show($id)
+    public function show(int $id, ShowProgramaAction $action): JsonResponse
     {
-        $programa = Programa::findOrFail($id);
-        return response()->json($programa);
+        return response()->json($action->execute($id));
     }
 
-    /**
-     * Criar novo programa (apenas admin)
-     */
-    public function store(Request $request)
+    public function store(StoreProgramaRequest $request, CreateProgramaAction $action): JsonResponse
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Você não tem permissão para realizar esta ação.'
-            ], 403);
-        }
-
-        $validated = $request->validate([
-            'nome' => 'required|string|max:255',
-            'descricao' => 'required|string',
-            'categoria' => 'required|string|max:255',
-            'link_oficial' => 'nullable|string|max:500',
-        ], [
-            'nome.required' => 'O nome é obrigatório.',
-            'descricao.required' => 'A descrição é obrigatória.',
-            'categoria.required' => 'A categoria é obrigatória.',
-        ]);
-
-        $programa = Programa::create($validated);
-
-        return response()->json($programa, 201);
+        return response()->json($action->execute($request->validated()), 201);
     }
 
-    /**
-     * Atualizar programa (apenas admin)
-     */
-    public function update(Request $request, $id)
+    public function update(UpdateProgramaRequest $request, int $id, UpdateProgramaAction $action): JsonResponse
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Você não tem permissão para realizar esta ação.'
-            ], 403);
-        }
-
-        $programa = Programa::findOrFail($id);
-
-        $validated = $request->validate([
-            'nome' => 'required|string|max:255',
-            'descricao' => 'required|string',
-            'categoria' => 'required|string|max:255',
-            'link_oficial' => 'nullable|string|max:500',
-        ], [
-            'nome.required' => 'O nome é obrigatório.',
-            'descricao.required' => 'A descrição é obrigatória.',
-            'categoria.required' => 'A categoria é obrigatória.',
-        ]);
-
-        $programa->update($validated);
-
-        return response()->json($programa);
+        return response()->json($action->execute($id, $request->validated()));
     }
 
-    /**
-     * Deletar programa (apenas admin)
-     */
-    public function destroy($id)
+    public function destroy(DeleteProgramaRequest $request, int $id, DeleteProgramaAction $action): JsonResponse
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Você não tem permissão para realizar esta ação.'
-            ], 403);
-        }
+        $action->execute($id);
 
-        $programa = Programa::findOrFail($id);
-        $programa->delete();
-
-        return response()->json([
-            'message' => 'Programa deletado com sucesso.'
-        ]);
+        return response()->json(['message' => 'Programa deletado com sucesso.']);
     }
 }
-
